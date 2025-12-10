@@ -8,11 +8,8 @@ using System.Threading.Tasks;
 
 namespace Domain.DomainModels
 {
-    public class Review
+    public class Review : BaseEntity
     {
-        [Key]
-        public Guid Id { get; set; }
-
         [Range(1, 5)]
         public int Rating { get; set; } // 1-5
         [StringLength(500)]

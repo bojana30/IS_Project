@@ -8,11 +8,8 @@ using System.Threading.Tasks;
 
 namespace Domain.DomainModels
 {
-    public class ShoppingCart
+    public class ShoppingCart : BaseEntity
     {
-        [Key]
-        public Guid Id { get; set; }
-
         // FK to User
         [Required]
 

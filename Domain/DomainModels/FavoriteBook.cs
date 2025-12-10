@@ -8,11 +8,8 @@ using System.Threading.Tasks;
 
 namespace Domain.DomainModels
 {
-    public class FavoriteBook
+    public class FavoriteBook : BaseEntity
     {
-        [Key]
-        public Guid Id { get; set; }
-
         [Required]
         public string? UserId { get; set; }
         public BookManagementAppUser? User { get; set; }

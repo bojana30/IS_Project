@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace Web.Data.Migrations
+namespace Repository.Migrations
 {
     /// <inheritdoc />
     public partial class init : Migration

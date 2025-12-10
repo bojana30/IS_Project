@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Domain.DomainModels;
-using Web.Data;
+using Repository;
 
 namespace Web.Controllers
 {

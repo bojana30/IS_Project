@@ -7,11 +7,8 @@ using System.Threading.Tasks;
 
 namespace Domain.DomainModels
 {
-    public class Book
+    public class Book : BaseEntity 
     {
-        [Key]
-        public Guid Id { get; set; }
-
         [Required]
         public string Title { get; set; }
         [Required]

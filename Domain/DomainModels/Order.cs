@@ -8,11 +8,8 @@ using System.Threading.Tasks;
 
 namespace Domain.DomainModels
 {
-    public class Order
+    public class Order : BaseEntity
     {
-        [Key]
-        public Guid Id { get; set; }
-
         [Required]
         public string? UserId { get; set; }               // FK to LibraryUser (Identity)
         public BookManagementAppUser? User { get; set; }

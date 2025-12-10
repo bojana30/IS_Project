@@ -7,11 +7,8 @@ using System.Threading.Tasks;
 
 namespace Domain.DomainModels
 {
-    public class Payment
+    public class Payment : BaseEntity
     {
-        [Key]
-        public Guid Id { get; set; }
-
         public PaymentStatus Status { get; set; }
         public PaymentMethod Method { get; set; }
 

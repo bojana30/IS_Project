@@ -7,11 +7,8 @@ using System.Threading.Tasks;
 
 namespace Domain.DomainModels
 {
-    public class OrderItem
+    public class OrderItem : BaseEntity
     {
-        [Key]
-        public Guid Id { get; set; }
-
         [Required]
         public Guid OrderId { get; set; }
         public Order? Order { get; set; }
