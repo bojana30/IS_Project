@@ -1,165 +1,97 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Domain.DomainModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Domain.DomainModels;
 using Repository;
+using Service.Implementation;
+using Service.Interface;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 
 namespace Web.Controllers
 {
     public class ShoppingCartsController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IShoppingCartService _shoppingCartService;
+        private readonly IOrderService _orderService;
 
-        public ShoppingCartsController(ApplicationDbContext context)
+        public ShoppingCartsController(IShoppingCartService shoppingCartService, IOrderService orderService)
         {
-            _context = context;
+            _shoppingCartService = shoppingCartService;
+            _orderService = orderService;
+        }
+
+        private string GetUserId()
+        {
+            return User.FindFirstValue(ClaimTypes.NameIdentifier);
         }
 
         // GET: ShoppingCarts
-        public async Task<IActionResult> Index()
+        // Shows current user's cart
+        public IActionResult Index()
         {
-            var applicationDbContext = _context.ShoppingCarts.Include(s => s.User);
-            return View(await applicationDbContext.ToListAsync());
+            var userId = GetUserId();
+            var cart = _shoppingCartService.GetShoppingCart(userId);
+
+            if (cart == null)
+                return View(new ShoppingCart());
+
+            return View(cart);
         }
 
-        // GET: ShoppingCarts/Details/5
-        public async Task<IActionResult> Details(Guid? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var shoppingCart = await _context.ShoppingCarts
-                .Include(s => s.User)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (shoppingCart == null)
-            {
-                return NotFound();
-            }
-
-            return View(shoppingCart);
-        }
-
-        // GET: ShoppingCarts/Create
-        public IActionResult Create()
-        {
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id");
-            return View();
-        }
-
-        // POST: ShoppingCarts/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        // POST: ShoppingCarts/AddToCart
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,UserId")] ShoppingCart shoppingCart)
+        public IActionResult AddToCart(Guid bookId, int quantity = 1)
         {
-            if (ModelState.IsValid)
-            {
-                shoppingCart.Id = Guid.NewGuid();
-                _context.Add(shoppingCart);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", shoppingCart.UserId);
-            return View(shoppingCart);
-        }
+            var userId = GetUserId();
 
-        // GET: ShoppingCarts/Edit/5
-        public async Task<IActionResult> Edit(Guid? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            var success = _shoppingCartService.AddToCart(userId, bookId, quantity);
 
-            var shoppingCart = await _context.ShoppingCarts.FindAsync(id);
-            if (shoppingCart == null)
-            {
-                return NotFound();
-            }
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", shoppingCart.UserId);
-            return View(shoppingCart);
-        }
+            if (!success)
+                return BadRequest();
 
-        // POST: ShoppingCarts/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Guid id, [Bind("Id,UserId")] ShoppingCart shoppingCart)
-        {
-            if (id != shoppingCart.Id)
-            {
-                return NotFound();
-            }
-
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(shoppingCart);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!ShoppingCartExists(shoppingCart.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["UserId"] = new SelectList(_context.Users, "Id", "Id", shoppingCart.UserId);
-            return View(shoppingCart);
-        }
-
-        // GET: ShoppingCarts/Delete/5
-        public async Task<IActionResult> Delete(Guid? id)
-        {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var shoppingCart = await _context.ShoppingCarts
-                .Include(s => s.User)
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (shoppingCart == null)
-            {
-                return NotFound();
-            }
-
-            return View(shoppingCart);
-        }
-
-        // POST: ShoppingCarts/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(Guid id)
-        {
-            var shoppingCart = await _context.ShoppingCarts.FindAsync(id);
-            if (shoppingCart != null)
-            {
-                _context.ShoppingCarts.Remove(shoppingCart);
-            }
-
-            await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
-        private bool ShoppingCartExists(Guid id)
+        // POST: ShoppingCarts/RemoveFromCart
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult RemoveFromCart(Guid bookId)
         {
-            return _context.ShoppingCarts.Any(e => e.Id == id);
+            var userId = GetUserId();
+
+            var success = _shoppingCartService.RemoveFromCart(userId, bookId);
+
+            if (!success)
+                return NotFound();
+
+            return RedirectToAction(nameof(Index));
         }
+
+        // POST: ShoppingCarts/ClearCart
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult ClearCart()
+        {
+            var userId = GetUserId();
+
+            _shoppingCartService.ClearCart(userId);
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Order()
+        {
+            var userId = GetUserId();
+            _orderService.CreateOrder(userId);
+            return RedirectToAction("Index", "Orders");
+        }
+
     }
 }

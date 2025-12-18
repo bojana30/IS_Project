@@ -1,46 +1,55 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Domain.DomainModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Domain.DomainModels;
 using Repository;
+using Service.Implementation;
+using Service.Interface;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Web.Controllers
 {
     public class BooksController : Controller
     {
-        private readonly ApplicationDbContext _context;
+        //private readonly ApplicationDbContext _context;
+        private readonly IBookService _bookService;
 
-        public BooksController(ApplicationDbContext context)
+        public BooksController(IBookService bookService)
         {
-            _context = context;
+            _bookService = bookService;
         }
 
         // GET: Books
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
-            return View(await _context.Books.ToListAsync());
+            var books = _bookService.GetAllBooks();
+            return View(books);
+            //return View(await _context.Books.ToListAsync());
         }
 
         // GET: Books/Details/5
-        public async Task<IActionResult> Details(Guid? id)
+        public IActionResult Details(Guid id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var book = await _context.Books
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (book == null)
-            {
-                return NotFound();
-            }
-
+            var book = _bookService.GetBook(id);
+            if (book == null) return NotFound();
             return View(book);
+            //if (id == null)
+            //{
+            //    return NotFound();
+            //}
+
+            //var book = await _context.Books
+            //    .FirstOrDefaultAsync(m => m.Id == id);
+            //if (book == null)
+            //{
+            //    return NotFound();
+            //}
+
+            //return View(book);
+
         }
 
         // GET: Books/Create
@@ -54,32 +63,43 @@ namespace Web.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,Title,Author,Description,Genre,YearPublished,ImageUrl,Price")] Book book)
+        public IActionResult Create(Book book)
         {
-            if (ModelState.IsValid)
-            {
-                book.Id = Guid.NewGuid();
-                _context.Add(book);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
-            }
-            return View(book);
+            if (!ModelState.IsValid)
+                return View(book);
+
+            book.Id = Guid.NewGuid();
+
+            _bookService.CreateBook(book);
+
+            return RedirectToAction(nameof(Index));
+            //if (ModelState.IsValid)
+            //{
+            //    book.Id = Guid.NewGuid();
+            //    _context.Add(book);
+            //    await _context.SaveChangesAsync();
+            //    return RedirectToAction(nameof(Index));
+            //}
+            //return View(book);
         }
 
         // GET: Books/Edit/5
-        public async Task<IActionResult> Edit(Guid? id)
+        public IActionResult Edit(Guid id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var book = await _context.Books.FindAsync(id);
-            if (book == null)
-            {
-                return NotFound();
-            }
+            var book = _bookService.GetBook(id);
+            if (book == null) return NotFound();
             return View(book);
+            //if (id == null)
+            //{
+            //    return NotFound();
+            //}
+
+            //var book = await _context.Books.FindAsync(id);
+            //if (book == null)
+            //{
+            //    return NotFound();
+            //}
+            //return View(book);
         }
 
         // POST: Books/Edit/5
@@ -87,72 +107,85 @@ namespace Web.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(Guid id, [Bind("Id,Title,Author,Description,Genre,YearPublished,ImageUrl,Price")] Book book)
+        public IActionResult Edit(Guid id, Book book)
         {
-            if (id != book.Id)
-            {
+            if (id != book.Id) 
                 return NotFound();
-            }
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    _context.Update(book);
-                    await _context.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!BookExists(book.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return RedirectToAction(nameof(Index));
-            }
-            return View(book);
+            if (!ModelState.IsValid) 
+                return View(book);
+
+            if (!_bookService.BookExists(id)) 
+                return NotFound();
+
+            _bookService.UpdateBook(book);
+            return RedirectToAction(nameof(Index));
+            //if (id != book.Id)
+            //{
+            //    return NotFound();
+            //}
+
+            //if (ModelState.IsValid)
+            //{
+            //    try
+            //    {
+            //        _context.Update(book);
+            //        await _context.SaveChangesAsync();
+            //    }
+            //    catch (DbUpdateConcurrencyException)
+            //    {
+            //        if (!BookExists(book.Id))
+            //        {
+            //            return NotFound();
+            //        }
+            //        else
+            //        {
+            //            throw;
+            //        }
+            //    }
+            //    return RedirectToAction(nameof(Index));
+            //}
+            //return View(book);
         }
 
         // GET: Books/Delete/5
-        public async Task<IActionResult> Delete(Guid? id)
+        public IActionResult Delete(Guid id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var book = await _context.Books
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (book == null)
-            {
-                return NotFound();
-            }
-
+            var book = _bookService.GetBook(id);
+            if (book == null) return NotFound();
             return View(book);
+            //if (id == null)
+            //{
+            //    return NotFound();
+            //}
+
+            //var book = await _context.Books
+            //    .FirstOrDefaultAsync(m => m.Id == id);
+            //if (book == null)
+            //{
+            //    return NotFound();
+            //}
+
+            //return View(book);
         }
 
         // POST: Books/Delete/5
         [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(Guid id)
+        //[ValidateAntiForgeryToken]
+        public IActionResult DeleteConfirmed(Guid id)
         {
-            var book = await _context.Books.FindAsync(id);
-            if (book != null)
-            {
-                _context.Books.Remove(book);
-            }
-
-            await _context.SaveChangesAsync();
+            _bookService.DeleteBook(id);
             return RedirectToAction(nameof(Index));
+            //var book = await _context.Books.FindAsync(id);
+            //if (book != null)
+            //{
+            //    _context.Books.Remove(book);
+            //}
+
+            //await _context.SaveChangesAsync();
+            //return RedirectToAction(nameof(Index));
         }
 
-        private bool BookExists(Guid id)
-        {
-            return _context.Books.Any(e => e.Id == id);
-        }
+       
     }
 }
